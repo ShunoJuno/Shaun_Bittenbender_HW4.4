@@ -1,0 +1,542 @@
+---
+title: "HW #4.3: Reproducible Data Analysis"
+author: "Shaun Bittenbender"
+date: "Apr. 8, 2026"
+format:
+  pdf:
+    code-fold: false
+execute:
+  echo: false
+  message: false
+  warning: false
+---
+
+## Section 1: Busiest Airport Analysis
+
+```{r}
+
+#Loads required libraries for web scraping, data manipulation, and cleaning
+library(rvest)     
+library(dplyr)     
+library(stringr)   
+library(janitor)   
+
+#Defines the URL of the Wikipedia page containing airport data
+url <- "https://en.wikipedia.org/wiki/List_of_busiest_airports_by_passenger_traffic"
+
+page <- read_html(url)
+
+#Extracts all tables from the webpage into a list
+tables <- page %>% html_table(fill = TRUE)
+
+#Extracts and clean data for 2025
+
+df_2025 <- tables[[2]] %>% clean_names()   #Selects the 2025 table and clean column names
+df_2025 <- df_2025 %>%
+  select(airport, totalpassengers)         #Keeps only relevant columns
+
+df_2025 <- df_2025 %>%
+  mutate(
+    airport = str_remove_all(airport, "\\[.*?\\]"),           #Removes citation brackets from airport names
+    totalpassengers = str_remove_all(totalpassengers, "\\[.*?\\]"),  #Removes citation brackets from passenger counts
+    totalpassengers = str_remove_all(totalpassengers, ","),          #Removes commas from numbers
+    totalpassengers = as.numeric(totalpassengers),                   #Converts passenger counts to numeric
+    year = 2025                                                      #Adds year column
+  )
+
+#Repeats cleaning process for 2024
+df_2024 <- tables[[3]] %>%
+  clean_names() %>%
+  select(airport, totalpassengers) %>%
+  mutate(
+    airport = str_remove_all(airport, "\\[.*?\\]"),
+    totalpassengers = str_remove_all(totalpassengers, "\\[.*?\\]"),
+    totalpassengers = str_remove_all(totalpassengers, ","),
+    totalpassengers = as.numeric(totalpassengers),
+    year = 2024
+  )
+
+#Repeats cleaning process for 2023
+df_2023 <- tables[[4]] %>%
+  clean_names() %>%
+  select(airport, totalpassengers) %>%
+  mutate(
+    airport = str_remove_all(airport, "\\[.*?\\]"),
+    totalpassengers = str_remove_all(totalpassengers, "\\[.*?\\]"),
+    totalpassengers = str_remove_all(totalpassengers, ","),
+    totalpassengers = as.numeric(totalpassengers),
+    year = 2023
+  )
+
+#Repeats cleaning process for 2022
+
+df_2022 <- tables[[5]] %>%
+  clean_names() %>%
+  select(airport, totalpassengers) %>%
+  mutate(
+    airport = str_remove_all(airport, "\\[.*?\\]"),
+    totalpassengers = str_remove_all(totalpassengers, "\\[.*?\\]"),
+    totalpassengers = str_remove_all(totalpassengers, ","),
+    totalpassengers = as.numeric(totalpassengers),
+    year = 2022
+  )
+
+#Repeats cleaning process for 2021
+
+df_2021 <- tables[[6]] %>%
+  clean_names() %>%
+  select(airport, totalpassengers) %>%
+  mutate(
+    airport = str_remove_all(airport, "\\[.*?\\]"),
+    totalpassengers = str_remove_all(totalpassengers, "\\[.*?\\]"),
+    totalpassengers = str_remove_all(totalpassengers, ","),
+    totalpassengers = as.numeric(totalpassengers),
+    year = 2021
+  )
+
+#Repeats cleaning process for 2020
+
+df_2020 <- tables[[7]] %>%
+  clean_names() %>%
+  select(airport, totalpassengers) %>%
+  mutate(
+    airport = str_remove_all(airport, "\\[.*?\\]"),
+    totalpassengers = str_remove_all(totalpassengers, "\\[.*?\\]"),
+    totalpassengers = str_remove_all(totalpassengers, ","),
+    totalpassengers = as.numeric(totalpassengers),
+    year = 2020
+  )
+
+#Combines all yearly datasets into one
+
+all_data <- bind_rows(
+  df_2025,
+  df_2024,
+  df_2023,
+  df_2022,
+  df_2021,
+  df_2020
+)
+
+#Defines a vector of selected airports
+selected_airports <- c(
+  "Hartsfield–Jackson Atlanta International Airport",
+  "Frankfurt Airport",
+  "Beijing Daxing International Airport",
+  "Los Angeles International Airport",
+  "Dubai International Airport",
+  "Tokyo Haneda Airport"
+)
+
+#Filters dataset to include only selected airports and sort by airport and year
+final_data <- all_data %>%
+  filter(airport %in% selected_airports) %>%
+  arrange(airport, year)
+```
+
+### A) Selected Airports
+
+This analysis focuses on six different major international airports: \
+1. Hartsfield–Jackson Atlanta International Airport \
+2. Los Angeles International Airport \
+3. Dubai International Airport \
+4. Tokyo Haneda Airport \
+5. Frankfurt Airport \
+6. Beijing Daxing International Airport
+
+### B) Airport Traffic Table
+
+```{r}
+#| label: tbl-airportTraffic
+#| tbl-cap: "Passenger Traffic (in Millions) for Selected Airports, 2020–2025"
+#| tbl-pos: H
+#| echo: false
+#| message: false
+#| warning: false
+#| html-table-processing: none
+#| lst-label: lst-airportTable
+#| lst-cap: "Code Chunk for Airport Traffic Table"
+
+#Loads required libraries
+library(tidyr)        
+library(knitr)        
+library(kableExtra)   
+library(dplyr)        
+
+#Creates formatted airport table
+
+airport_table <- final_data %>%
+  mutate(
+    passengers_millions = round(totalpassengers / 1e6, 1)  #Converts passenger counts to millions and round to 1 decimal
+  ) %>%
+  select(airport, year, passengers_millions) %>%           #Keeps only relevant columns
+  pivot_wider(
+    names_from = year,                                    #Spreads years across columns
+    values_from = passengers_millions                     #Fills values with passenger counts
+  ) %>%
+  arrange(desc(`2025`))                                   #Sorts airports by highest 2025 traffic
+
+
+#Displays styled table
+
+airport_table |>
+  kable(
+    digits = 1,                                           #Displays values with 1 decimal place
+    col.names = c("Airport", "2020", "2021", "2022", "2023", "2024", "2025"),
+    format.args = list(big.mark = ","),                   #Formats numbers with commas
+    align = "lcccccc"                                     #Aligns columns (left for airport, centered for years)
+  ) |>
+  kable_classic() |>                                      
+  add_footnote(
+    label = c("Passenger counts are shown in millions."), #Adds footnote
+    notation = "none",
+    threeparttable = TRUE                                 #Ensures proper formatting of footnote in table
+  )
+
+```
+
+#### Table Interpretation
+
+The table shows passenger traffic trends from 2020 to 2025. There is a noticeable drop in 2020 across all airports, which corresponds to the global impact of COVID-19. After 2020, passenger numbers steadily increase each year, indicating recovery.
+
+### D) Airport Traffic Plot
+
+```{r}
+
+#| label: fig-airportPlot
+#| fig-cap: "Passenger Traffic Trends for Major Airports (2020–2025)"
+#| fig-pos: H
+#| fig-height: 5
+#| fig-width: 12
+#| out-width: 100%
+#| fig-align: center
+#| echo: false
+#| message: false
+#| warning: false
+
+#Color palette ----
+psuPalette <- c("#1E407C", "#BC204B", "#3EA39E", "#E98300",
+                "#999999", "#AC8DCE")
+
+library(ggplot2)
+library(dplyr)
+
+#Prepares data with shorter labels ----
+plot_data <- final_data %>%
+  mutate(
+    passengers_millions = totalpassengers / 1e6,
+    airport_short = case_when(
+      airport == "Hartsfield–Jackson Atlanta International Airport" ~ "Atlanta(ATL)",
+      airport == "Los Angeles International Airport" ~ "Los Angeles(LAX)",
+      airport == "Dubai International Airport" ~ "Dubai(DXB)",
+      airport == "Tokyo Haneda Airport" ~ "Tokyo Haneda(HND)",
+      airport == "Frankfurt Airport" ~ "Frankfurt(FRA)",
+      airport == "Beijing Daxing International Airport" ~ "Beijing(PKX)"
+    )
+  )
+
+#Plots ----
+ggplot(
+  data = plot_data,
+  aes(
+    x = year,
+    y = passengers_millions,
+    color = airport_short,
+    linetype = airport_short
+  )
+) +
+  geom_line(linewidth = 0.75) +
+  geom_point(size = 2) +
+  theme_bw() +
+  labs(
+    x = "Year",
+    y = "Passengers (Millions)",
+    color = "Airport",
+    linetype = "Airport"
+  ) +
+  theme(
+    text = element_text(size = 12),
+    legend.position = "bottom",
+    legend.key.size = unit(0.8, "cm")
+  ) +
+  guides(
+    color = guide_legend(nrow = 2),
+    linetype = guide_legend(nrow = 2)
+  ) +
+  scale_color_manual(
+    values = psuPalette
+  ) +
+  scale_y_continuous(
+    expand = expansion(mult = 0.01)
+  )
+
+```
+
+#### Plot Interpretation
+
+The plot highlights a sharp decline in 2020 followed by a steady recovery through 2025. All airports show upward trends after 2020, although the speed of recovery differs.
+
+### E: Busiest Airport Analysis
+
+The analysis reveals a clear pattern in global air travel over this six-year period. First, there is a significant decline in passenger traffic in 2020 due to the COVID-19 pandemic. This decline is consistent across all airports. Secondly, from 2021 to 2023, passenger traffic begins to recover. The rate of recovery varies, with some airports rebounding faster than others. Finally, by 2024 and 2025, most airports show strong growth and approach or exceed previous levels. This suggests that global air travel demand has largely recovered. Overall, Hartsfield–Jackson Atlanta International Airport remains the busiest airport across all years. Dubai and Tokyo Haneda also show strong performance, while Beijing Daxing exhibits more variability.
+
+## Section 2: Monte Carlo Numerical Integration
+
+### A) Monte Carlo Approach to Numerical Integration
+
+Monte Carlo integration is a numerical method used to approximate the value of a definite integral using random sampling. Instead of computing the exact area analytically, this method estimates the area under a curve by generating random points within a defined region and determines the proportion that fall below the function.
+
+In this analysis, the function of interest is the Beta(2,2) probability density function over the interval from 0 to 1. A rectangle is defined with bounds ( x \[0,1\] ) and ( y \[0,1.5\] ), which fully contains the curve. Random points are generated within this rectangle, and the proportion of points that fall on or below the curve is used to estimate the integral. This proportion is then multiplied by the area of the rectangle to produce the Monte Carlo estimate.
+
+### B) Small Multiple Visualization
+
+```{r}
+#| label: fig-mcSimulation
+#| fig-cap: "Monte Carlo Integration Estimates for Beta(2,2) Distribution at Different Sample Sizes"
+#| fig-pos: H
+#| fig-height: 4.5
+#| fig-width: 8
+#| out-width: 85%
+#| fig-align: center
+#| fig-alt: "Four-panel plot showing Monte Carlo integration estimates with increasing sample sizes."
+#| aria-describedby: mcSimulationLD
+#| lst-label: lst-figureMC
+#| lst-cap: "Code Chunk for Monte Carlo Simulation Visualization"
+#| echo: false
+#| message: false
+#| warning: false
+
+#Loads required libraries
+library(ggplot2)   
+library(dplyr)     
+library(patchwork) 
+
+#Step 1: Monte Carlo Simulation Function
+
+#This function generates n random (x, y) points within a rectangular region
+mc_simulation <- function(n, x_min, x_max, y_min, y_max){
+  x_vals <- runif(n, min = x_min, max = x_max)  #Generates random x-values within bounds
+  y_vals <- runif(n, min = y_min, max = y_max)  #Generates random y-values within bounds
+  data.frame(x = x_vals, y = y_vals)            #Returna data frame of points
+}
+
+#Step 2: Flag points and estimate integral
+
+#This function determines whether points fall below the curve and computes the integral estimate
+flag_points_and_estimate <- function(sim_data){
+  sim_data_flagged <- sim_data %>%
+    mutate(
+      f_x = dbeta(x, shape1 = 2, shape2 = 2),          #Computes Beta(2,2) density value at each x
+      flag = ifelse(y <= f_x, "on/below", "above")     #Labels points as below or above the curve
+    )
+  
+  p <- mean(sim_data_flagged$flag == "on/below")       #Proportions of points below the curve
+  rect_area <- (1 - 0) * (1.5 - 0)                     #Area of bounding rectangle
+  estimate <- p * rect_area                            #Monte Carlo estimate of the integral
+  
+  list(data = sim_data_flagged, estimate = estimate)   #Returns flagged data and estimate
+}
+
+#Step 3: Plotting function
+
+#This function creates a scatterplot of simulated points with the Beta curve overlay
+plot_mc <- function(sim_data_flagged, estimate){
+  ggplot(sim_data_flagged, aes(x = x, y = y, color = flag)) +
+    geom_point(alpha = 0.6, size = 1) +                #Plots sampled points
+    stat_function(
+      fun = dbeta,                                     #Overlays Beta(2,2) density curve
+      args = list(shape1 = 2, shape2 = 2),
+      xlim = c(0, 1),
+      color = "blue",
+      linewidth = 0.8
+    ) +
+    labs(
+      title = paste("n =", nrow(sim_data_flagged)),     #Displays sample size in title
+      subtitle = paste("Estimate =", round(estimate, 4)), #Shows estimated integral value
+      x = "x",
+      y = "y",
+      color = "Flag"
+    ) +
+    theme_bw() +                                       #Apply clean black-and-white theme
+    theme(
+      text = element_text(size = 10),                  #Adjusts text size for readability
+      legend.position = "bottom"                       #Moves legend below plot
+    )
+}
+
+#Step 4: Generate simulations at different sample sizes
+
+sim100 <- mc_simulation(100, 0, 1, 0, 1.5)       #Simulate 100 points
+sim500 <- mc_simulation(500, 0, 1, 0, 1.5)       #500 points
+sim1000 <- mc_simulation(1000, 0, 1, 0, 1.5)     #1,000 points
+sim10000 <- mc_simulation(10000, 0, 1, 0, 1.5)   #10,000 points
+
+#Step 5: Flag points and compute estimates
+
+flag100 <- flag_points_and_estimate(sim100)       #Process simulation for n = 100
+flag500 <- flag_points_and_estimate(sim500)       #n = 500
+flag1000 <- flag_points_and_estimate(sim1000)     #n = 1,000
+flag10000 <- flag_points_and_estimate(sim10000)   #n = 10,000
+
+#Step 6: Create individual plots
+
+plot100 <- plot_mc(flag100$data, flag100$estimate)         #Plot for n = 100
+plot500 <- plot_mc(flag500$data, flag500$estimate)         #n = 500
+plot1000 <- plot_mc(flag1000$data, flag1000$estimate)      #n = 1,000
+plot10000 <- plot_mc(flag10000$data, flag10000$estimate)   #n = 10,000
+
+#Step 7: Combine plots into small multiple layout
+
+plot100 + plot500 + plot1000 + plot10000   #Arranges plots in a grid using patchwork
+
+```
+
+### C) Interpretation of visualization
+
+This small multiple demonstrates how Monte Carlo integration becomes more accurate and stable as the number of sampled points increases. With only 100 samples, the estimate fluctuates noticeably due to randomness, but as the sample size grows the estimates begin to cluster tightly around a consistent value. This pattern shows that increasing the number of random points reduces variability and improves the precision of the estimate.
+
+From these results, the exact value of the integral is very likely 1.0. The strongest evidence comes from the estimates at higher sample sizes, particularly at n = 1000 and n = 10,000, where the values are extremely close to 1.
+
+Overall, the small multiple helps the viewer see both the randomness inherent in Monte Carlo methods and the reliability that emerges with larger samples, making it clear how repeated sampling can approximate an exact result. Increasing the number of random samples improves the accuracy of the Monte Carlo approximation.
+
+## Section 3: Planning and Prompting GenAI Tools
+
+### A) Creating a Plan
+
+For this section I will be using the diamonds dataset that is built into R, using the ggplots2 package, that creates a plot that shows how the carrot of a diamond affects its price. The AI tool that I will be using is ChatGPT (GPT-5-mini) by OpenAI.
+
+#### The Plan:
+
+1.  Install and load the necessary packages
+2.  Load the diamonds dataset
+3.  Tidy and wrangle the data with removing any missing values and setting this to a new variable
+4.  Organize the data by cut (carrot)
+5.  Choose a visualization goal, which in this case will be a plot showing the relationship between a diamonds carrot and its price
+6.  Create the Scatter plot using color to differentiate the different cuts. The x-axis will be the carrot and the y-axis will be the price.
+7.  Improve the visualization if needed
+8.  Add a short interpretation of the plot
+9.  Double check all code and plot to make sure they are correct.
+
+### B) Plan with the AI tool
+
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+
+# 1. Install and load necessary packages
+# install.packages("ggplot2")
+# install.packages("dplyr")
+# install.packages("scales")
+
+library(ggplot2)
+library(dplyr)
+library(scales)
+
+# 2. Load the diamonds dataset
+data("diamonds")
+
+# 3. Tidy and wrangle the data
+diamonds_clean <- diamonds %>%
+  drop_na()
+
+# 4. Organize the data by cut
+diamonds_clean <- diamonds_clean %>%
+  arrange(cut)
+
+# 5–7. Create scatter plot with trend line
+ggplot(diamonds_clean, aes(x = carat, y = price, color = cut)) +
+  geom_point(alpha = 0.6) +
+  geom_smooth(method = "loess", se = FALSE, color = "black") +  # Trend line
+  labs(
+    title = "Relationship Between Diamond Carat and Price",
+    x = "Carat (Weight of Diamond)",
+    y = "Price (USD)",
+    color = "Cut Quality"
+  ) +
+  scale_y_continuous(labels = comma) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold")
+  )
+
+```
+
+The black trend line highlights a clear nonlinear upward curve, confirming that price increases faster as carat grows. Smaller diamonds show a gradual increase in price, while larger diamonds rise sharply in cost. The spread of colors (cuts) shows variation, but the overall pattern is consistent across all cut qualities
+
+### C) Generic Prompt into the same AI tool
+
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+
+library(ggplot2)
+library(dplyr)
+
+# Load diamonds dataset
+data("diamonds")
+
+# Remove any missing values (good practice)
+diamonds_clean <- diamonds %>%
+  filter(!is.na(carat), !is.na(price))
+
+# Create plot
+ggplot(diamonds_clean, aes(x = carat, y = price)) +
+  geom_point(alpha = 0.3, color = "steelblue") +
+  geom_smooth(method = "lm", color = "red", se = TRUE) +
+  labs(
+    title = "Relationship Between Diamond Carat and Price",
+    x = "Carat (Diamond Size)",
+    y = "Price (USD)"
+  ) +
+  theme_minimal()
+
+```
+
+### D) Comparasion
+
+As you can see from the two graphs, the AI tool input that was given the plan gave a far better plot. While both plots show that the higher the carrot, the higher the price, the tool that was given the plan is far more detailed with colors representing the different cuts, better labeling, and an index for the colors. Both plots are very crowded with a lot of points cramped together, but that is mostly due to my plan not specifying to maybe make sure that the plot is more readable. Overall there is a clear difference in quality of using an AI tool with a plan and without one with the better your plan being, the better the plot will end up.
+
+## Section 4: Course Reflection
+
+Over the last few months in this course I have learned a lot. At the start I had never even heard of R or R-Studio and now I am working with it almost daily completing different assignments and learning new tricks.\
+For example I didn't know that R had built in packages that you could install that came with databases you could work with, like the diamonds dataset in the ggplot 2 package for example. Instead of having to go online and fine and download some dataset, you can just install the package ONCE, load it up, and can now work with it to your hearts content. You get the freedom to tidy the data however you like and create tables and graphs of this data without going through a more difficult process.\
+Another think I learned was about having consistency and making sure that my code is easy to understand for people who may just be looking at it for the first time. Like making sure that the way I code is consistent and the variables I use have the same type of casing and format throughout. I also learned more about the importance of adding clear comments to my code. Before on assignments for previous classes the only thing that really mattered was getting the correct output so the comments were really just for myself, because of this my comments would be very brief and I wouldn't use that many of them. Now because my code itself could be viewed more by other people I need to make sure that it is easy to understand.
+
+## Section 5: Appendix
+
+### A) GenAI Usage
+
+I used the ChatGPT (GPT-5-mini) by OpenAI on 4/13/26.
+
+The fist prompt that I gave was:\
+"Using this plan: 1. Install and load the necessary packages 2. Load the diamonds dataset 3. Tidy and wrangle the data with removing any missing values and setting this to a new variable 4. Organize the data by cut (carrot) 5. Choose a visualization goal, which in this case will be a plot showing the relationship between a diamonds carrot and its price 6. Create the Scatter plot using color to differentiate the different cuts. The x-axis will be the carrot and the y-axis will be the price. 7. Improve the visualization if needed 8. Add a short interpretation of the plot 9. Double check all code and plot to make sure they are correct. can you in R use the diamonds data set to create a plot that shows the relationship between the diamonds carrot and price?"
+
+I recieved the following results:\
+"Here’s a clean, step-by-step R solution that follows your plan and produces a polished scatter plot of carat vs. price using the diamonds dataset. ✅ Full R Code 1. Install and load necessary packages install.packages("ggplot2") \# run once if not installed install.packages("dplyr") \# run once if not installed library(ggplot2) library(dplyr) 2. Load the diamonds dataset data("diamonds") 3. Tidy and wrangle the data (remove missing values) diamonds_clean \<- diamonds %\>% drop_na() 4. Organize the data by cut (carat is already numeric, cut is categorical) diamonds_clean \<- diamonds_clean %\>% arrange(cut) 5–7. Create and improve the scatter plot ggplot(diamonds_clean, aes(x = carat, y = price, color = cut)) + geom_point(alpha = 0.6) + labs( title = "Relationship Between Diamond Carat and Price", x = "Carat (Weight of Diamond)", y = "Price (USD)", color = "Cut Quality" ) + scale_y_continuous(labels = scales::comma) + \# easier-to-read y-axis theme_minimal() + theme( plot.title = element_text(hjust = 0.5, face = "bold") ) 📊 Short Interpretation There is a strong positive relationship between carat and price: as carat increases, price increases. The relationship is nonlinear, with price rising more steeply at higher carat values. Different cut qualities (color-coded) show variation, but carat size is the dominant factor influencing price. 👍 Notes / Improvements You Already Included ✔ Removed missing values (drop_na()) ✔ Used color to distinguish cut ✔ Improved readability with: transparency (alpha) formatted y-axis (comma) clean theme"
+
+The second prompt I entered was:\
+"Using the diamonds dataset in R, can you please make me a plot showing the relationship between a diamonds carrot and its price?"\
+I recieved the following result:\
+"Here’s a clean R (ggplot2) plot showing the relationship between diamond carat (size) and price, including a trend line.
+
+📊 Carat vs Price Plot (with trend line)
+
+library(ggplot2) library(dplyr)
+
+Load diamonds dataset data("diamonds")
+
+Remove any missing values (good practice) diamonds_clean \<- diamonds %\>% filter(!is.na(carat), !is.na(price))
+
+Create plot ggplot(diamonds_clean, aes(x = carat, y = price)) + geom_point(alpha = 0.3, color = "steelblue") + geom_smooth(method = "lm", color = "red", se = TRUE) + labs( title = "Relationship Between Diamond Carat and Price", x = "Carat (Diamond Size)", y = "Price (USD)" ) + theme_minimal() 📌 What this shows Each point = one diamond Blue dots = actual data Red line = linear trend (best-fit relationship) You should see a strong positive relationship: as carat increases, price increases sharply"
+
+{{< pagebreak >}} \# Code Appendix
+
+```{r}
+#| label: codeAppend
+#| ref-label: !expr knitr::all_labels()
+#| echo: true
+#| eval: true
+
+```
