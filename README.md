@@ -1,28 +1,28 @@
 # Project Title
 
-Write a 1-2 sentences that quickly and clearly convey what your repo is for.
+This repo is for HW #4.4 for the PSU stat 184 course
 
 ## Overview
 
-Expand on those introductory sentences with a brief but informative description of your project's purpose and goals. This section should help visitors decide whether they should dig deeper into your repo/project.
+In this repo you will find the solution for my HW #4.3 assignment, covering the Busiest Airports, Monte Carlo Simulation for Numerical Integration, and the GenAI sections.
 
-### Interesting Insight (Optional)
-
-This is optional but highly recommended. You'll include one interesting insight from your project as part of the README. This insight is most effective when you include a visual. Keep in mind that this visual must be included as an image file (e.g., JPG, PNG, etc.). You can export plots created with `{ggplot2}` by using the function `ggsave`.
 
 ## Data Sources and Acknowledgements
 
-Be sure to list where you got any data used within the project. Be sure to acknowledge any one whose work or elements you're drawing upon.
+I used two major sources of data for this assignment:
+
+1. [Wikipedia's List of Busiest Airports](https://en.wikipedia.org/w/index.php?title=List_of_busiest_airports_by_passenger_traffic&oldid=1347733676) that we scraped for academic purposes
+2. The calcium data was provided by the professor Neil Hatfield
 
 ## Current Plan
 
-Provide some information about what you intend to doe with the project. You can additionally refer the visitor to your detailed plan document.
+The current plan is to show off the HW 4.3 assignment into this github repository 
 
 ## Repo Structure
 
-Use this section to explain the structure of your repo. This should help visitors quickly figure out where they should look to find certain elements. Further, you can use this space to highlight and briefly explain important/key files in the repo.
+This repo is relatively simple in organization with most files living at the top level.
 
 
 ## Authors
 
-Give information about who are the authors of the project and how people can get in touch if they have questions.
+The author is [Shaun Bittenbender](smb8620@psu.edu) email them with any questions
